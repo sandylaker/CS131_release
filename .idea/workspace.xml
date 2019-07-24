@@ -2,11 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="6bad4646-4194-4490-8a61-90bdc82cef45" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/other.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/CS131_release.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/CS131_release.iml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/hw2_release/edge.py" beforeDir="false" afterPath="$PROJECT_DIR$/hw2_release/edge.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/hw2_release/hw2.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/hw2_release/hw2.ipynb" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -80,7 +76,7 @@
       <updated>1563979675741</updated>
       <workItem from="1563979683438" duration="86000" />
       <workItem from="1563980239555" duration="5250000" />
-      <workItem from="1564000115801" duration="1226000" />
+      <workItem from="1564000115801" duration="1553000" />
     </task>
     <servers />
   </component>
