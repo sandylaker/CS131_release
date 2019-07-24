@@ -144,7 +144,7 @@ def gradient(img):
     gx, gy = partial_x(img), partial_y(img)
     G = np.sqrt(gx ** 2 + gy ** 2)
     # np.rad2deg output range [-pi, +pi]
-    theta = (np.rad2deg(gy, gx) + 180) % 360
+    theta = (np.rad2deg(np.arctan2(gy, gx)) + 180) % 360
     # END YOUR CODE
 
     return G, theta
@@ -167,16 +167,27 @@ def non_maximum_suppression(G, theta):
     out = np.zeros((H, W))
 
     # Round the gradient direction to the nearest 45 degrees
-    theta = np.floor((theta + 22.5) / 45) * 45
+    # this will round the value in range [337.5, 360] to 360
+    theta = (np.floor((theta + 22.5) / 45) * 45) % 360
+
+    angle_to_direc = {0: ([0, -1], [0, 1]),
+                      180: ([0, -1], [0, 1]),
+                      45: ([-1, -1], [1, 1]),
+                      225: ([-1, -1], [1, 1]),
+                      90: ([-1, 0], [1, 0]),
+                      270: ([-1, 0], [1, 0]),
+                      135: ([-1, 1], [1, -1]),
+                      315: ([-1, 1], [1, -1]),
+                      }
 
     # BEGIN YOUR CODE
     # the gradient is measured clock-wisely
     for i in range(1, H - 1):
-        for j in range(1, H - 1):
-            alpha = np.deg2rad(theta[i, j])
-            p1 = G[i - int(np.around(np.sin(alpha))), j - int(np.around(np.cos(alpha)))]
-            p2 = G[i + int(np.around(np.sin(alpha))), j + int(np.around(np.cos(alpha)))]
-            if not (G[i, j] > p1 and G[i, j] > p2):
+        for j in range(1, W - 1):
+            # get the index offsets of the two neighbors
+            directions = angle_to_direc[theta[i, j]]
+            neighbors = [G[i + delta[0], j + delta[1]] for delta in directions]
+            if not (G[i, j] >= np.max(neighbors)):
                 out[i, j] = 0
             else:
                 out[i, j] = G[i, j]
@@ -304,7 +315,16 @@ def canny(img, kernel_size=5, sigma=1.4, high=20, low=15):
         edge: numpy array of shape(H, W).
     """
     # YOUR CODE HERE
-    edge = 0
+    # suppress noise
+    img_smoothed = conv(img, gaussian_kernel(kernel_size, sigma))
+    # compute gradient magnitude and direction
+    G, theta = gradient(img_smoothed)
+    # apply nms
+    nms = non_maximum_suppression(G, theta)
+    # apply double thresholding
+    strong_edges, weak_edges = double_thresholding(nms, high, low)
+    # apply hysteresis and connectivity analysis
+    edge = link_edges(strong_edges, weak_edges)
     # END YOUR CODE
 
     return edge
@@ -328,7 +348,7 @@ def hough_transform(img):
     # Set rho and theta ranges
     W, H = img.shape
     diag_len = int(np.ceil(np.sqrt(W * W + H * H)))
-    rhos = np.linspace(-diag_len, diag_len, diag_len * 2.0 + 1)
+    rhos = np.linspace(-diag_len, diag_len, int(diag_len * 2 + 1))
     thetas = np.deg2rad(np.arange(-90.0, 90.0))
 
     # Cache some reusable values
@@ -343,8 +363,13 @@ def hough_transform(img):
     # Transform each point (x, y) in image
     # Find rho corresponding to values in thetas
     # and increment the accumulator in the corresponding coordiate.
-    ### YOUR CODE HERE
-    pass
-    ### END YOUR CODE
+    # YOUR CODE HERE
+    for y, x in zip(ys, xs):
+        for i in range(num_thetas):
+            rho = x * cos_t[i] + y * sin_t[i]
+            # rho plus diag_len, giving a value in range [0, 2 * diag_len]
+            # this transforms the rho value into the row index of the accumulator
+            accumulator[int(rho + diag_len), i] += 1
+    # END YOUR CODE
 
     return accumulator, rhos, thetas
