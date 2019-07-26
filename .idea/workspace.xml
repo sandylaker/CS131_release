@@ -2,7 +2,13 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="6bad4646-4194-4490-8a61-90bdc82cef45" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/.idea/dictionaries/yaweili.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/hw3_release/.ipynb_checkpoints/hw3-checkpoint.ipynb" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/hw2_release/hw2.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/hw2_release/hw2.ipynb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/hw3_release/hw3.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/hw3_release/hw3.ipynb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/hw3_release/panorama.py" beforeDir="false" afterPath="$PROJECT_DIR$/hw3_release/panorama.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/hw3_release/utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/hw3_release/utils.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -26,7 +32,7 @@
     <property name="last_opened_file_path" value="$PROJECT_DIR$" />
     <property name="nodejs_interpreter_path.stuck_in_default_project" value="undefined stuck path" />
     <property name="nodejs_npm_path_reset_for_default_project" value="true" />
-    <property name="settings.editor.selected.configurable" value="editor.preferences.fonts.default" />
+    <property name="settings.editor.selected.configurable" value="preferences.editor" />
   </component>
   <component name="RunDashboard">
     <option name="ruleStates">
@@ -76,7 +82,8 @@
       <updated>1563979675741</updated>
       <workItem from="1563979683438" duration="86000" />
       <workItem from="1563980239555" duration="5250000" />
-      <workItem from="1564000115801" duration="1553000" />
+      <workItem from="1564000115801" duration="2838000" />
+      <workItem from="1564014513856" duration="21622000" />
     </task>
     <servers />
   </component>
@@ -88,7 +95,9 @@
       <map>
         <entry key="MAIN">
           <value>
-            <State />
+            <State>
+              <option name="COLUMN_ORDER" />
+            </State>
           </value>
         </entry>
       </map>

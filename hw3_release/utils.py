@@ -94,7 +94,7 @@ def get_output_space(img_ref, imgs, transforms):
         transforms: list of affine transformation matrices. transforms[i] maps
             points in imgs[i] to the points in img_ref
     Returns:
-        output_shape
+        output_shape, offset
     """
 
     assert (len(imgs) == len(transforms))
@@ -107,7 +107,7 @@ def get_output_space(img_ref, imgs, transforms):
         r, c = imgs[i].shape
         H = transforms[i]
         corners = np.array([[0, 0], [r, 0], [0, c], [r, c]])
-        warped_corners = corners.dot(H[:2,:2]) + H[2,:2]
+        warped_corners = corners.dot(H[:2, :2]) + H[2, :2]
         all_corners.append(warped_corners)
 
     # Find the extents of both the reference image and the warped
@@ -122,7 +122,6 @@ def get_output_space(img_ref, imgs, transforms):
     # Ensure integer shape with np.ceil and dtype conversion
     output_shape = np.ceil(output_shape).astype(int)
     offset = corner_min
-
     return output_shape, offset
 
 def warp_image(img, H, output_shape, offset):

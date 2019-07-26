@@ -14,7 +14,7 @@ from skimage.util.shape import view_as_blocks
 from scipy.spatial.distance import cdist
 from scipy.ndimage.filters import convolve
 
-from utils import pad, unpad, get_output_space, warp_image
+from hw3_release.utils import pad, unpad, get_output_space, warp_image
 
 
 def harris_corners(img, window_size=3, k=0.04):
@@ -43,9 +43,14 @@ def harris_corners(img, window_size=3, k=0.04):
     dx = filters.sobel_v(img)
     dy = filters.sobel_h(img)
 
-    ### YOUR CODE HERE
-    pass
-    ### END YOUR CODE
+    # YOUR CODE HERE
+    # compute the matrices and filter with window
+    dxdx_f = convolve(dx * dx, window)
+    dxdy_f = convolve(dx * dy, window)
+    dydy_f = convolve(dy * dy, window)
+    # compute the response function
+    response = dxdx_f * dydy_f - dxdy_f ** 2 - k * (dxdx_f + dydy_f) ** 2
+    # END YOUR CODE
 
     return response
 
@@ -69,9 +74,13 @@ def simple_descriptor(patch):
         feature: 1D array of shape (H * W)
     """
     feature = []
-    ### YOUR CODE HERE
-    pass
-    ### END YOUR CODE
+    # YOUR CODE HERE
+    mean = np.mean(patch)
+    std = np.std(patch, ddof=1)
+    if std == 0:
+        std = 1
+    feature = ((patch - mean) / std).flatten()
+    # END YOUR CODE
     return feature
 
 
@@ -117,14 +126,23 @@ def match_descriptors(desc1, desc2, threshold=0.5):
         matches: an array of shape (Q, 2) where each row holds the indices of one pair
         of matching descriptors
     """
-    matches = []
-
-    N = desc1.shape[0]
+    M = desc1.shape[0]
     dists = cdist(desc1, desc2)
 
-    ### YOUR CODE HERE
-    pass
-    ### END YOUR CODE
+    # YOUR CODE HERE
+    sorted_index = np.argsort(np.argsort(dists, axis=1), axis=1)
+    # get the indices of the smallest element in each row,
+    # tuple (array of row_indices, array of col_indices)
+    closest_index = np.where(sorted_index == 0)
+    closest_dst = dists[closest_index]
+    sec_closest_dst = dists[np.where(sorted_index == 1)]
+    is_matched = ((closest_dst / sec_closest_dst) < threshold)
+    print('Number of matched key points:', is_matched.shape[0])
+    # reshape the row and column index as 2-D for concatenating
+    closest_index = [idx[:, np.newaxis] for idx in closest_index]
+    # only select indices of the matched element
+    matches = np.concatenate(closest_index, axis=1)[is_matched]
+    # END YOUR CODE
 
     return matches
 
@@ -148,13 +166,13 @@ def fit_affine_matrix(p1, p2):
     p1 = pad(p1)
     p2 = pad(p2)
 
-    ### YOUR CODE HERE
-    pass
-    ### END YOUR CODE
+    # YOUR CODE HERE
+    H = np.linalg.lstsq(p2, p1, rcond=None)[0]
+    # END YOUR CODE
 
     # Sometimes numerical issues cause least-squares to produce the last
     # column which is not exactly [0, 0, 1]
-    H[:,2] = np.array([0, 0, 1])
+    H[:, 2] = np.array([0, 0, 1])
     return H
 
 
@@ -185,24 +203,41 @@ def ransac(keypoints1, keypoints2, matches, n_iters=200, threshold=20):
     matches = matches.copy()
 
     N = matches.shape[0]
-    print(N)
     n_samples = int(N * 0.2)
 
-    matched1 = pad(keypoints1[matches[:,0]])
-    matched2 = pad(keypoints2[matches[:,1]])
+    matched1 = pad(keypoints1[matches[:, 0]])
+    matched2 = pad(keypoints2[matches[:, 1]])
 
     max_inliers = np.zeros(N)
     n_inliers = 0
 
     # RANSAC iteration start
-    ### YOUR CODE HERE
-    pass
-    ### END YOUR CODE
-    print(H)
+    # YOUR CODE HERE
+    for i in range(n_iters):
+        # choose the subset of samples
+        idx = np.random.choice(N, n_samples, replace=False)
+        p1 = matched1[idx, :]
+        p2 = matched2[idx, :]
+
+        # compute the affine transformation matrix
+        H = np.linalg.lstsq(p2, p1, rcond=None)[0]
+        H[:, 2] = [0, 0, 1]
+        # Compute the inliers of the current fit
+        cur_inliers = np.linalg.norm((matched2.dot(H) - matched1), axis=1) ** 2 < threshold
+        num_cur_inliers = np.sum(cur_inliers)
+        if num_cur_inliers > n_inliers:
+            max_inliers = cur_inliers.copy()
+            n_inliers = num_cur_inliers
+
+    # compute the affine transformation matrix with the inliers of the best fit
+    H = np.linalg.lstsq(matched2[max_inliers], matched1[max_inliers], rcond=None)[0]
+    H[:, 2] = np.asarray([0, 0, 1])
+    
+    # END YOUR CODE
     return H, orig_matches[max_inliers]
 
 
-def hog_descriptor(patch, pixels_per_cell=(8,8)):
+def hog_descriptor(patch, pixels_per_cell=(8, 8)):
     """
     Generating hog descriptor by the following steps:
 
@@ -247,9 +282,18 @@ def hog_descriptor(patch, pixels_per_cell=(8,8)):
     cells = np.zeros((rows, cols, n_bins))
 
     # Compute histogram per cell
-    ### YOUR CODE HERE
-    pass
-    ### YOUR CODE HERE
+    # YOUR CODE HERE
+    for i in range(rows):
+        for j in range(cols):
+            cell_hist = np.histogram(theta_cells[i, j].flatten(),
+                                     bins=n_bins,
+                                     range=(0, 180),
+                                     weights=G_cells[i, j].flatten())[0]
+            cells[i, j, :] = cell_hist
+    # normalize the HoG
+    cells = (cells - np.mean(cells)) / np.std(cells, ddof=1)
+    block = cells.flatten()
+    # YOUR CODE HERE
 
     return block
 
@@ -265,13 +309,13 @@ def linear_blend(img1_warped, img2_warped):
     4. Combine the images
 
     Args:
-        img1_warped: Refernce image warped into output space
+        img1_warped: Reference image warped into output space
         img2_warped: Transformed image warped into output space
 
     Returns:
         merged: Merged image in output space
     """
-    out_H, out_W = img1_warped.shape # Height and width of output space
+    out_H, out_W = img1_warped.shape    # Height and width of output space
     img1_mask = (img1_warped != 0)  # Mask == 1 inside the image
     img2_mask = (img2_warped != 0)  # Mask == 1 inside the image
 
@@ -283,9 +327,23 @@ def linear_blend(img1_warped, img2_warped):
     # This is where to start weight mask for warped image 2
     left_margin = np.argmax(img2_mask[out_H//2, :].reshape(1, out_W), 1)[0]
 
-    ### YOUR CODE HERE
-    pass
-    ### END YOUR CODE
+    # YOUR CODE HERE
+    # the weight matrix of img2_warped, weight_1 = 1 - weight_2
+    weight_2 = np.tile(np.linspace(0, 1, right_margin - left_margin), (out_H, 1))
+
+    # weight img1_warped
+    img1_warped_weighted = img1_warped.copy()
+    img1_warped_weighted[:, right_margin:] = 0
+    img1_warped_weighted[:, left_margin: right_margin] *= (1 - weight_2)
+
+    # weight img2_warped
+    img2_warped_weighted = img2_warped.copy()
+    img2_warped_weighted[:, :left_margin] = 0
+    img2_warped_weighted[:, left_margin: right_margin] *= weight_2
+
+    # blend two weighted images
+    merged = img1_warped_weighted + img2_warped_weighted
+    # END YOUR CODE
 
     return merged
 
@@ -324,8 +382,34 @@ def stitch_multiple_images(imgs, desc_func=simple_descriptor, patch_size=5):
         mtchs = match_descriptors(descriptors[i], descriptors[i+1], 0.7)
         matches.append(mtchs)
 
-    ### YOUR CODE HERE
-    pass
-    ### END YOUR CODE
+    # YOUR CODE HERE
+    # chain the transforms to obtain the transform for each image
+    # the transform for the first image is simply the indentity
+    # since it is the reference image
+    transforms = [np.eye(3)]
+    for i in range(len(matches)):
+        transform_to_prev, robust_matches = ransac(keypoints[i],
+                                                   keypoints[i+1],
+                                                   matches[i],
+                                                   threshold=1)
+        # ransac returns the H for g2 @ H = g1
+        # so transform_to_prev is in the first place when chaining the transforms
+        transforms.append(transform_to_prev @ transforms[-1])
+
+    output_shape, offset = get_output_space(img_ref=imgs[0], imgs=imgs[1:],
+                                            transforms=transforms[1:])
+
+    imgs_warped = []
+    for i in range(len(imgs)):
+        img_warped = warp_image(imgs[i], transforms[i], output_shape, offset)
+        # the default value to fill past edges of input is -1
+        img_warped[img_warped == -1] = 0
+        imgs_warped.append(img_warped)
+
+    # start stiching
+    panorama = imgs_warped[0]
+    for img in imgs_warped[1:]:
+        panorama = linear_blend(panorama, img)
+    # END YOUR CODE
 
     return panorama
