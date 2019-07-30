@@ -9,7 +9,7 @@ Python Version: 3.5+
 
 import numpy as np
 from skimage import color
-
+import numba
 
 def energy_function(image):
     """Computes energy of the input image.
@@ -29,13 +29,15 @@ def energy_function(image):
     out = np.zeros((H, W))
     gray_image = color.rgb2gray(image)
 
-    ### YOUR CODE HERE
-    pass
-    ### END YOUR CODE
+    # YOUR CODE HERE
+    grad_x, grad_y = np.gradient(gray_image)
+    out = np.abs(grad_x) + np.abs(grad_y)
+    # END YOUR CODE
 
     return out
 
 
+# @numba.njit
 def compute_cost(image, energy, axis=1):
     """Computes optimal cost map (vertical) and paths of the seams.
 
@@ -70,15 +72,27 @@ def compute_cost(image, energy, axis=1):
     H, W = energy.shape
 
     cost = np.zeros((H, W))
-    paths = np.zeros((H, W), dtype=np.int)
+    paths = np.zeros((H, W), dtype=int)
 
     # Initialization
     cost[0] = energy[0]
     paths[0] = 0  # we don't care about the first row of paths
 
-    ### YOUR CODE HERE
-    pass
-    ### END YOUR CODE
+    # YOUR CODE HERE
+    for i in range(1, H):
+        tmp = np.zeros((3, W))
+        # E(i, j) + M(i-1, j-1), sum the left most element in i-th row with 0
+        # go left when back tracking from bottom to up
+        tmp[0] = np.concatenate(([np.inf], energy[i, 1:] + cost[i - 1, :-1]))
+        # E(i, J) + M(i-1, j)
+        tmp[1] = energy[i, :] + cost[i-1, :]
+        # E(i, j) + M(i-1, j+1), sum the right most element in i-th row with 0
+        # go right when back tracking from bottom to up
+        tmp[2] = np.concatenate((energy[i, :-1] + cost[i - 1, 1:], [np.inf]))
+        cost[i] = np.min(tmp, axis=0)
+        # minus 1 to form the mapping {0: -1, 1: 0, 2: 1}
+        paths[i] = np.argmin(tmp, axis=0) - 1
+    # END YOUR CODE
 
     if axis == 0:
         cost = np.transpose(cost, (1, 0))
@@ -91,6 +105,7 @@ def compute_cost(image, energy, axis=1):
     return cost, paths
 
 
+# @numba.njit
 def backtrack_seam(paths, end):
     """Backtracks the paths map to find the seam ending at (H-1, end)
 
@@ -109,14 +124,15 @@ def backtrack_seam(paths, end):
     """
     H, W = paths.shape
     # initialize with -1 to make sure that everything gets modified
-    seam = - np.ones(H, dtype=np.int)
+    seam = - np.ones(H, dtype=int)
 
     # Initialization
     seam[H-1] = end
 
-    ### YOUR CODE HERE
-    pass
-    ### END YOUR CODE
+    # YOUR CODE HERE
+    for i in range(2, H+1):
+        seam[H - i] = paths[H - i + 1, seam[H - i + 1]] + seam[H - i + 1]
+    # END YOUR CODE
 
     # Check that seam only contains values in [0, W-1]
     assert np.all(np.all([seam >= 0, seam < W], axis=0)), "seam contains values out of bounds"
@@ -124,6 +140,7 @@ def backtrack_seam(paths, end):
     return seam
 
 
+# @numba.njit
 def remove_seam(image, seam):
     """Remove a seam from the image.
 
@@ -144,9 +161,11 @@ def remove_seam(image, seam):
 
     out = None
     H, W, C = image.shape
-    ### YOUR CODE HERE
-    pass
-    ### END YOUR CODE
+    # YOUR CODE HERE
+    mask = np.ones((H, W), dtype=bool)
+    mask[np.arange(H), seam] = 0
+    out = image[mask].reshape(H, W-1, C).astype(image.dtype)
+    # END YOUR CODE
     out = np.squeeze(out)  # remove last dimension if C == 1
 
     # Make sure that `out` has same type as `image`
@@ -156,6 +175,7 @@ def remove_seam(image, seam):
     return out
 
 
+# @numba.njit
 def reduce(image, size, axis=1, efunc=energy_function, cfunc=compute_cost):
     """Reduces the size of the image using the seam carving process.
 
@@ -179,6 +199,7 @@ def reduce(image, size, axis=1, efunc=energy_function, cfunc=compute_cost):
     """
 
     out = np.copy(image)
+
     if axis == 0:
         out = np.transpose(out, (1, 0, 2))
 
@@ -189,9 +210,18 @@ def reduce(image, size, axis=1, efunc=energy_function, cfunc=compute_cost):
 
     assert size > 0, "Size must be greater than zero"
 
-    ### YOUR CODE HERE
-    pass
-    ### END YOUR CODE
+    # YOUR CODE HERE
+    energy = efunc(out)
+    cost, paths = cfunc(out, energy)
+    for i in range(W - size):
+        # find the seam
+        seam = backtrack_seam(paths, end=cost[-1].argmin())
+        # remove the seam
+        out = remove_seam(out, seam)
+        # recompute the energy, cost and paths
+        energy = efunc(out)
+        cost, paths = cfunc(out, energy)
+    # END YOUR CODE
 
     assert out.shape[1] == size, "Output doesn't have the right shape"
 
@@ -201,6 +231,7 @@ def reduce(image, size, axis=1, efunc=energy_function, cfunc=compute_cost):
     return out
 
 
+# @numba.njit
 def duplicate_seam(image, seam):
     """Duplicates pixels of the seam, making the pixels on the seam path "twice larger".
 
@@ -216,13 +247,17 @@ def duplicate_seam(image, seam):
 
     H, W, C = image.shape
     out = np.zeros((H, W + 1, C))
-    ### YOUR CODE HERE
-    pass
-    ### END YOUR CODE
+    # YOUR CODE HERE
+    for i, j in enumerate(seam):
+        out[i, :j, :] = image[i, :j, :]
+        out[i, j+1:, :] = image[i, j:, :]
+    out[np.arange(H), seam, :] = image[np.arange(H), seam, :]
+    # END YOUR CODE
 
     return out
 
 
+# @numba.njit
 def enlarge_naive(image, size, axis=1, efunc=energy_function, cfunc=compute_cost):
     """Increases the size of the image using the seam duplication process.
 
@@ -254,9 +289,19 @@ def enlarge_naive(image, size, axis=1, efunc=energy_function, cfunc=compute_cost
 
     assert size > W, "size must be greather than %d" % W
 
-    ### YOUR CODE HERE
-    pass
-    ### END YOUR CODE
+    # YOUR CODE HERE
+    energy = efunc(out)
+    cost, paths = cfunc(image, energy)
+
+    for _ in range(size - W):
+        # find the seam
+        seam = backtrack_seam(paths, cost[-1].argmin())
+        # duplicate the seam
+        out = duplicate_seam(out, seam)
+        # re-compute the energy, cost and paths
+        energy = efunc(out)
+        cost, paths = cfunc(out, energy)
+    # END YOUR CODE
 
     if axis == 0:
         out = np.transpose(out, (1, 0, 2))
@@ -264,6 +309,7 @@ def enlarge_naive(image, size, axis=1, efunc=energy_function, cfunc=compute_cost
     return out
 
 
+# @numba.njit
 def find_seams(image, k, axis=1, efunc=energy_function, cfunc=compute_cost):
     """Find the top k seams (with lowest energy) in the image.
 
@@ -340,6 +386,7 @@ def find_seams(image, k, axis=1, efunc=energy_function, cfunc=compute_cost):
     return seams
 
 
+# @numba.njit
 def enlarge(image, size, axis=1, efunc=energy_function, cfunc=compute_cost):
     """Enlarges the size of the image by duplicating the low energy seams.
 
@@ -372,9 +419,24 @@ def enlarge(image, size, axis=1, efunc=energy_function, cfunc=compute_cost):
 
     assert size <= 2 * W, "size must be smaller than %d" % (2 * W)
 
-    ### YOUR CODE HERE
-    pass
-    ### END YOUR CODE
+    # YOUR CODE HERE
+    # get k seams
+    seams = find_seams(out, size - W)
+    # record the seam indices of each seam, seam_index has shape (i, H) in the loop
+    seam_index = []
+    # duplicate each seam iteratively
+    for i in range(1, size - W + 1):
+        _, seam_cur = np.nonzero(seams == i)
+        seam_index.append(seam_cur.copy())
+        # get the order of the seam index, which is the shift for computing the index
+        # of the current seam, since if the column index (in certain row) of the current seam in
+        # the original image is located on the right of any previous seam, it will be shifted
+        # onto the right and that shift will accumulate, depending on the how many seams
+        # are located on the left side of current seam in that row.
+        index_shift = np.argsort(np.argsort(np.asarray(seam_index), axis=0), axis=0)[-1, :]
+        out = duplicate_seam(out, seam_cur + index_shift)
+
+    # END YOUR CODE
 
     if axis == 0:
         out = np.transpose(out, (1, 0, 2))
@@ -382,6 +444,7 @@ def enlarge(image, size, axis=1, efunc=energy_function, cfunc=compute_cost):
     return out
 
 
+# @numba.njit
 def compute_forward_cost(image, energy):
     """Computes forward cost map (vertical) and paths of the seams.
 
@@ -410,13 +473,35 @@ def compute_forward_cost(image, energy):
     # Initialization
     cost[0] = energy[0]
     for j in range(W):
-        if j > 0 and j < W - 1:
+        if 0 < j < W - 1:
             cost[0, j] += np.abs(image[0, j+1] - image[0, j-1])
     paths[0] = 0  # we don't care about the first row of paths
 
-    ### YOUR CODE HERE
-    pass
-    ### END YOUR CODE
+    # YOUR CODE HERE
+    for i in range(1, H):
+        m1 = np.insert(image[i, :W-1], 0, 0, axis=0)
+        m2 = np.insert(image[i, 1:], W-1, 0, axis=0)
+        m3 = image[i-1]
+        m4 = np.insert(image[i - 1, :W-1], 0, 0, axis=0)
+        m5 = np.insert(image[i - 1, 1:], W-1, 0, axis=0)
+        c_v = np.abs(m2 - m1) + np.abs(m5 - m4)
+        c_v[0] = 0
+        c_v[-1] = 0
+        c_l = np.abs(m2 - m1) + np.abs(m3 - m1)
+        c_r = np.abs(m2 - m1) + np.abs(m3 - m2)
+        c_l[0] = 0
+        c_r[-1] = 0
+        i1 = np.insert(cost[i-1, 0: W-1], 0, np.inf, axis=0)
+        i2 = cost[i-1]
+        i3 = np.insert(cost[i-1, 1: W], W-1, np.inf, axis=0)
+        C = np.concatenate(((i1 + c_l)[np.newaxis, :],
+                            (i2 + c_v)[np.newaxis, :],
+                            (i3 + c_r)[np.newaxis, :]), axis=0)
+        # removing image[i, j] will loose the energy on pixel [i, j], so this part of energy
+        # must also be counted in.
+        cost[i] = energy[i] + np.min(C, axis=0)
+        paths[i] = np.argmin(C, axis=0) - 1
+    # END YOUR CODE
 
     # Check that paths only contains -1, 0 or 1
     assert np.all(np.any([paths == 1, paths == 0, paths == -1], axis=0)), \
@@ -425,12 +510,15 @@ def compute_forward_cost(image, energy):
     return cost, paths
 
 
+# @numba.njit
 def reduce_fast(image, size, axis=1, efunc=energy_function, cfunc=compute_cost):
     """Reduces the size of the image using the seam carving process. Faster than `reduce`.
 
     Use your own implementation (you can use auxiliary functions if it helps like `energy_fast`)
     to implement a faster version of `reduce`.
 
+    Hint: do we really need to compute the whole cost map again at each iteration?
+    
     Args:
         image: numpy array of shape (H, W, C)
         size: size to reduce height or width to (depending on axis)
@@ -453,12 +541,29 @@ def reduce_fast(image, size, axis=1, efunc=energy_function, cfunc=compute_cost):
 
     assert size > 0, "Size must be greater than zero"
 
-    ### YOUR CODE HERE
-    # Delete that line, just here for the autograder to pass setup checks
-    out = reduce(image, size, 1, efunc, cfunc)
-    pass
-    ### END YOUR CODE
-
+    # YOUR CODE HERE
+    energy = efunc(out)
+    for _ in range(W - size):
+        cost, paths = cfunc(out, energy)
+        end = np.argmin(cost[-1])
+        seam = backtrack_seam(paths, end)
+        # get the seam area
+        i = np.min(seam)
+        j = np.max(seam)
+        out = remove_seam(out, seam)
+        # only re-compute the energy inside the seam area
+        if i < 1:
+            if j <= W-3:
+                energy = np.c_[efunc(out[:, :j+1]), energy[:, j+2:]]
+            else:
+                energy = efunc(out)
+        else:
+            if j <= W-3:
+                energy = np.c_[energy[:, i], efunc(out[:, i: j+1]), energy[:, j+2:]]
+            else:
+                energy = np.c_[energy[:, i], efunc(out[:, i:])]
+    # END YOUR CODE
+    print(out.shape)
     assert out.shape[1] == size, "Output doesn't have the right shape"
 
     if axis == 0:
@@ -467,6 +572,7 @@ def reduce_fast(image, size, axis=1, efunc=energy_function, cfunc=compute_cost):
     return out
 
 
+# @numba.njit
 def remove_object(image, mask):
     """Remove the object present in the mask.
 
@@ -484,9 +590,9 @@ def remove_object(image, mask):
     H, W, _ = image.shape
     out = np.copy(image)
 
-    ### YOUR CODE HERE
+    # YOUR CODE HERE
     pass
-    ### END YOUR CODE
+    # END YOUR CODE
 
     assert out.shape == image.shape
 
