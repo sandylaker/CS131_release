@@ -2,10 +2,10 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="6bad4646-4194-4490-8a61-90bdc82cef45" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/hw5_release/.ipynb_checkpoints/hw5-checkpoint.ipynb" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/hw5_release/hw5.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/hw5_release/hw5.ipynb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/hw5_release/segmentation.py" beforeDir="false" afterPath="$PROJECT_DIR$/hw5_release/segmentation.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/hw6_release/features.py" beforeDir="false" afterPath="$PROJECT_DIR$/hw6_release/features.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/hw6_release/k_nearest_neighbor.py" beforeDir="false" afterPath="$PROJECT_DIR$/hw6_release/k_nearest_neighbor.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -88,7 +88,9 @@
       <workItem from="1564175704909" duration="140000" />
       <workItem from="1564224799421" duration="3160000" />
       <workItem from="1564332382137" duration="26295000" />
-      <workItem from="1564510432782" duration="6343000" />
+      <workItem from="1564510432782" duration="6586000" />
+      <workItem from="1564700188278" duration="1165000" />
+      <workItem from="1564743555513" duration="5896000" />
     </task>
     <servers />
   </component>

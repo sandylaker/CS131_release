@@ -1,5 +1,5 @@
 import numpy as np
-
+from scipy.stats import mode
 
 def compute_distances(X1, X2):
     """Compute the L2 distance between each point in X1 and each point in X2.
@@ -27,7 +27,7 @@ def compute_distances(X1, X2):
     #
     # HINT: Try to formulate the l2 distance using matrix multiplication
 
-    pass
+    dists = np.linalg.norm(X1.reshape[M, 1, -1] - X2.reshape[1, N, -1], axis=-1)
     # END YOUR CODE
 
     assert dists.shape == (M, N), "dists should have shape (M, N), got %s" % dists.shape
@@ -50,23 +50,16 @@ def predict_labels(dists, y_train, k=1):
     num_test, num_train = dists.shape
     y_pred = np.zeros(num_test, dtype=np.int)
 
-    for i in range(num_test):
-        # A list of length k storing the labels of the k nearest neighbors to
-        # the ith test point.
-        closest_y = []
-        # Use the distance matrix to find the k nearest neighbors of the ith
-        # testing point, and use self.y_train to find the labels of these
-        # neighbors. Store these labels in closest_y.
-        # Hint: Look up the function numpy.argsort.
-
-        # Now that you have found the labels of the k nearest neighbors, you
-        # need to find the most common label in the list closest_y of labels.
-        # Store this label in y_pred[i]. Break ties by choosing the smaller
-        # label.
-
-        # YOUR CODE HERE
-        pass
-        # END YOUR CODE
+    # YOUR CODE HERE
+    # labels has shape (num_test, num_train) as dists
+    labels = np.tile(y_train.reshape(1, -1), (num_test, 1))
+    sort_index = np.argsort(dists, axis=1)
+    dists = dists[sort_index]
+    # sort the corresponding index and consider only the k closest labels
+    labels = labels[sort_index][:, :k]
+    y_pred, _ = mode(labels, axis=1)
+    y_pred = y_pred.flatten()
+    # END YOUR CODE
 
     return y_pred
 
@@ -111,7 +104,14 @@ def split_folds(X_train, y_train, num_folds):
 
     # YOUR CODE HERE
     # Hint: You can use the numpy array_split function.
-    pass
+    X_lst = np.array_split(X_train, num_folds, axis=0)
+    y_train = y_train.reshape(-1, 1)
+    y_lst = np.array_split(y_train, num_folds, axis=0)
+    for i in range(num_folds):
+        X_vals[i, :, :] = X_lst[i]
+        X_trains[i, :, :] = np.vstack(X_lst[:i] + X_lst[i + 1:])
+        y_vals[i, :] = y_lst[i][:, 0]
+        y_trains[i, :] = np.vstack(y_lst[:i] + y_lst[i + 1:])[:, 0]
     # END YOUR CODE
 
     return X_trains, y_trains, X_vals, y_vals
