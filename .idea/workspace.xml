@@ -2,10 +2,11 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="6bad4646-4194-4490-8a61-90bdc82cef45" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/hw7_release/.ipynb_checkpoints/hw7-checkpoint.ipynb" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/hw6_release/features.py" beforeDir="false" afterPath="$PROJECT_DIR$/hw6_release/features.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/hw6_release/k_nearest_neighbor.py" beforeDir="false" afterPath="$PROJECT_DIR$/hw6_release/k_nearest_neighbor.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/hw7_release/detection.py" beforeDir="false" afterPath="$PROJECT_DIR$/hw7_release/detection.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/hw7_release/hw7.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/hw7_release/hw7.ipynb" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/hw7_release/util.py" beforeDir="false" afterPath="$PROJECT_DIR$/hw7_release/util.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -90,7 +91,9 @@
       <workItem from="1564332382137" duration="26295000" />
       <workItem from="1564510432782" duration="6586000" />
       <workItem from="1564700188278" duration="1165000" />
-      <workItem from="1564743555513" duration="5896000" />
+      <workItem from="1564743555513" duration="6188000" />
+      <workItem from="1564761064932" duration="256000" />
+      <workItem from="1564927363368" duration="5892000" />
     </task>
     <servers />
   </component>

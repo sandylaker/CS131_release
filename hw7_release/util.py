@@ -1,5 +1,5 @@
 import numpy as np
-from detection import *
+from hw7_release.detection import *
 from skimage.transform import rescale, resize, downscale_local_mean
 from skimage.filters import gaussian
 
@@ -94,13 +94,13 @@ def get_detector(part_h, part_w, parts, image_paths):
 
 def get_heatmap(image, face_feature, face_shape, detectors_list, parts):
     _, _, _, _, face_response_map = pyramid_score \
-        (image, face_feature, face_shape, stepSize = 30, scale = 0.8)
+        (image, face_feature, face_shape, step_size= 30, scale = 0.8)
     face_response_map=resize(face_response_map,image.shape)
     face_heatmap_shifted = shift_heatmap(face_response_map, [0,0])
     for i,detector in enumerate(detectors_list):
         part = parts[i]
         max_score, r, c, scale,response_map = pyramid_score\
-            (image, face_feature, face_shape,stepSize = 30, scale=0.8)
+            (image, face_feature, face_shape, step_size= 30, scale=0.8)
         mu, std = compute_displacement(part, face_shape)
         response_map = resize(response_map, face_response_map.shape)
         response_map_shifted = shift_heatmap(response_map, mu)
