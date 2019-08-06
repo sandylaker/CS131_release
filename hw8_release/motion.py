@@ -12,6 +12,7 @@ from skimage.transform import pyramid_gaussian
 from skimage.filters import sobel_h, sobel_v, gaussian
 from skimage.feature import corner_harris, corner_peaks
 
+
 def lucas_kanade(img1, img2, keypoints, window_size=5):
     """ Estimate flow vector at each keypoint using Lucas-Kanade method.
 
@@ -48,13 +49,19 @@ def lucas_kanade(img1, img2, keypoints, window_size=5):
         # locations can be computed using bilinear interpolation.
         y, x = int(round(y)), int(round(x))
 
-        ### YOUR CODE HERE
-        pass
-        ### END YOUR CODE
+        # YOUR CODE HERE
+        grad_x = Ix[y-w: y+w+1, x-w: x+w+1]
+        grad_y = Iy[y-w: y+w+1, x-w: x+w+1]
+        A = np.concatenate((grad_x.reshape(-1, 1), grad_y.reshape(-1, 1)), axis=1)
+        b = - It[y-w: y+w+1, x-w: x+w+1].reshape(-1, 1)
+        d = np.linalg.inv(A.T.dot(A),  A.T.dot(b)).flatten()
+        flow_vectors.append(d)
+        # END YOUR CODE
 
     flow_vectors = np.array(flow_vectors)
 
     return flow_vectors
+
 
 def iterative_lucas_kanade(img1, img2, keypoints,
                            window_size=9,
@@ -94,9 +101,9 @@ def iterative_lucas_kanade(img1, img2, keypoints,
 
 
         # TODO: Compute inverse of G at point (x1, y1)
-        ### YOUR CODE HERE
+        # YOUR CODE HERE
         pass
-        ### END YOUR CODE
+        # END YOUR CODE
 
         # iteratively update flow vector
         for k in range(num_iters):
@@ -105,9 +112,9 @@ def iterative_lucas_kanade(img1, img2, keypoints,
             y2 = int(round(y+gy+vy)); x2 = int(round(x+gx+vx))
 
             # TODO: Compute bk and vk = inv(G) x bk
-            ### YOUR CODE HERE
+            # YOUR CODE HERE
             pass
-            ### END YOUR CODE
+            # END YOUR CODE
 
             # Update flow vector by vk
             v += vk
@@ -146,9 +153,9 @@ def pyramid_lucas_kanade(img1, img2, keypoints,
     g = np.zeros(keypoints.shape)
 
     for L in range(level, -1, -1):
-        ### YOUR CODE HERE
+        # YOUR CODE HERE
         pass
-        ### END YOUR CODE
+        # END YOUR CODE
 
     d = g + d
     return d
@@ -167,10 +174,11 @@ def compute_error(patch1, patch2):
     """
     assert patch1.shape == patch2.shape, 'Differnt patch shapes'
     error = 0
-    ### YOUR CODE HERE
+    # YOUR CODE HERE
     pass
-    ### END YOUR CODE
+    # END YOUR CODE
     return error
+
 
 def track_features(frames, keypoints,
                    error_thresh=1.5,
@@ -248,9 +256,9 @@ def IoU(bbox1, bbox2):
     x2, y2, w2, h2 = bbox2
     score = 0
 
-    ### YOUR CODE HERE
-    pass
-    ### END YOUR CODE
+    # YOUR CODE HERE
+
+    # END YOUR CODE
 
     return score
 
